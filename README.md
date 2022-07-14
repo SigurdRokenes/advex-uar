@@ -2,6 +2,21 @@
 
 In this branch I have added code to apply "Gabor" and "Fog" attacks to custom images utilizing the code by [Ameya005](https://github.com/ameya005).
 
+To use:
+
+`python create_aug_datasets.py --idir FOLDER_WITH_INPUT_IMAGES --odir PATH_TO_OUTPUT --osize OUTPUT_RESOLUTION_IMAGES --type TYPE_OF_ATTACK_APPLIED --eps DISTORTION_STRENGTH`
+
+Possible type:
+"snow", "gabor" or "fog"
+
+For tested values of distortion strength (--eps), see Table 4, Appendix A in [Testing Robustness Against Unforeseen Adversaries](http://arxiv.org/abs/1908.08016)
+
+There is an attempt at JPEG distortion provided which can be uncommented in `create_aug_dataset.py` however it does not work properly at this point.
+
+To run using CPU instead of GPU:
+Replace ALL instances of `cuda` with `cpu` in the following files:
+`create_aug_dataset.py, fog_attack.py, gabor_attack.py, gabor.py, jpeg_attack.py, jpeg.py, snow_attack.py, snow.py`
+
 
 
 ## Forked from reposistory and paper by [Kang et al.](https://github.com/ddkang/advex-uar) : 
