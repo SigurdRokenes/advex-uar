@@ -4,7 +4,7 @@ In this branch I have added code to apply "Gabor" and "Fog" attacks to custom im
 
 
 
-# Forked from reposistory and paper by [Kang et al.](https://github.com/ddkang/advex-uar)
+## Forked from reposistory and paper by [Kang et al.](https://github.com/ddkang/advex-uar)
 
 Testing Robustness Against Unforeseen Adversaries
 =================================================
