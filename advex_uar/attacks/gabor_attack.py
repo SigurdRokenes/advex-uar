@@ -8,6 +8,59 @@ import scipy.sparse as sparse
 from advex_uar.attacks.attacks import AttackWrapper
 from advex_uar.attacks.gabor import get_gabor_with_sides, valid_position, gabor_rand_distributed
 
+def get_gabor_vars(batch_size, resol):
+    grid = 14
+
+    #if self.rand_init:
+    sparse_matrices = []
+    sp_conv_numpy = sparse.random(resol*batch_size, resol,
+                    density= 1. / grid, format='csr')
+    sp_conv_numpy.data = sp_conv_numpy.data * 2 - 1
+    sp_conv = torch.FloatTensor(sp_conv_numpy.todense()).view(
+                batch_size, resol, resol)
+
+    #mask = (sp_conv == 0).cuda().float().view(-1, 1, self.resol, self.resol)
+    gabor_vars = sp_conv.clone().cuda().view(-1, 1, resol, resol)
+    gabor_vars.requires_grad_(True)
+    return gabor_vars
+
+def _get_gabor_kernel(batch_size):
+    # make gabor filters to convolve with variables
+    k_size = 23
+    kernels = []
+    for b in range(batch_size):
+        sides = np.random.randint(10) + 1
+        sigma = 0.3 * torch.rand(1) +  0.1
+        Lambda = (k_size / 4. - 3) * torch.rand(1) + 3
+        theta = np.pi * torch.rand(1)
+
+        kernels.append(get_gabor_with_sides(k_size, sigma, Lambda, theta, sides).cuda())
+    gabor_kernel = torch.cat(kernels, 0).view(-1, 1, k_size, k_size)
+    return gabor_kernel
+
+def apply_gabor(img, outsize, eps_max = 12.5):
+    pixel_inp = img.detach()
+    batch_size = img.size(0)
+    scale_eps = False
+    scale_each = False
+    if scale_eps:
+        if scale_each:
+            rand = torch.rand(pixel_inp.size()[0], device='cuda')
+        else:
+            rand = random.random() * torch.ones(pixel_inp.size()[0], device='cuda')
+        base_eps = rand.mul(eps_max)
+        #step_size = self.step_size * torch.ones(pixel_inp.size()[0], device='cuda')
+    else:
+        base_eps = eps_max * torch.ones(pixel_inp.size()[0], device='cuda')
+        #step_size = self.step_size * torch.ones(pixel_inp.size()[0], device='cuda')
+
+    gabor_kernel = _get_gabor_kernel(batch_size)
+    gabor_vars = get_gabor_vars(batch_size, outsize)
+    gabor_noise = gabor_rand_distributed(gabor_vars, gabor_kernel)
+    gabor_noise = gabor_noise.expand(-1, 3, -1, -1)
+    gabor_img = torch.clamp(pixel_inp + base_eps[:, None, None, None] * gabor_noise, 0., 255.)
+    return gabor_img
+
 class GaborAttack(AttackWrapper):
     def __init__(self, nb_its, eps_max, step_size, resol, rand_init=True, scale_each=False):
         """

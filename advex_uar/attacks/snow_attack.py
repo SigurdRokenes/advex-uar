@@ -10,7 +10,7 @@ from advex_uar.attacks.snow import snow_creator, make_kernels
 
 def apply_snow(img, snow, scale, discolor=0.25):    
     out = (1 - discolor) * img +\
-    discolor * torch.max(img, (0.2126 * img[:,0:1] + 0.7152 * img[:,1:2] + 0.0722 * img[:,2:3]) * 1.5 + 0.5)   
+        discolor * torch.max(img, (0.2126 * img[:,0:1] + 0.7152 * img[:,1:2] + 0.0722 * img[:,2:3]) * 1.5 + 0.5)   
     return torch.clamp(out + scale[:, None, None, None] * snow, 0, 1)
 
 class SnowAttack(AttackWrapper):

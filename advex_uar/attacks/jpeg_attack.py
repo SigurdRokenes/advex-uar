@@ -6,6 +6,19 @@ import torch.nn as nn
 from advex_uar.attacks.attacks import AttackWrapper
 from advex_uar.attacks.jpeg import JPEG
 
+
+
+def apply_jpeg(img, resol, eps_max = 0.125):
+    pixel_img = img.detach()
+    print(pixel_img.size())
+    attackwrapper = JPEGAttack(nb_its = 1, eps_max=eps_max, resol=resol, step_size=1, rand_init=True,
+                                opt='linf', scale_each=False, l1_max = 2.)
+    res = attackwrapper._forward(pixel_img, scale_eps=False)
+    #print(res.size)
+    return res
+    
+
+
 class JPEGAttack(AttackWrapper):
     def __init__(self, nb_its, eps_max, step_size, resol,
                  rand_init=True, opt='linf', scale_each=False, l1_max=2.):
@@ -66,7 +79,7 @@ class JPEGAttack(AttackWrapper):
             elif self.opt == 'l2':
                 batch_size = pixel_inp.size()[0]
                 grad_norm = torch.norm(grad.view(batch_size, -1), 2.0, dim=1)
-                normalized_grad = grad / grad_norm[:, None]                
+                normalized_grad = grad / (grad_norm[:, None] + 1e-8)
                 cat_var.data = cat_var.data + step_size[:, None] * normalized_grad
                 l2_delta = torch.norm(cat_var.data.view(batch_size, -1), 2.0, dim=1)
                 proj_scale = torch.min(torch.ones_like(l2_delta, device='cuda'), base_eps / l2_delta)
@@ -193,7 +206,7 @@ class JPEGAttack(AttackWrapper):
         cat_var.requires_grad_()
         return cat_var
 
-    def _forward(self, pixel_model, pixel_img, target, scale_eps=False, avoid_target=False):
+    def _forward(self, pixel_img, scale_eps=False):
         if scale_eps:
             if self.scale_each:
                 rand = torch.rand(pixel_img.size()[0], device='cuda')
@@ -210,15 +223,15 @@ class JPEGAttack(AttackWrapper):
         pixel_inp = pixel_img.detach()
         pixel_inp.requires_grad = True
         cat_var = self._init(batch_size, height, width, base_eps)
-        if self.nb_its > 0:
-            if self.opt in ['linf', 'l2']:
-                cat_var = self._run_one_pgd(pixel_model, pixel_inp, cat_var, target,
-                                            base_eps, step_size, avoid_target=avoid_target)
-            elif self.opt == 'l1':
-                cat_var = self._run_one_fw(pixel_model, pixel_inp, cat_var, target,
-                                           base_eps, avoid_target=avoid_target)
-            else:
-                raise NotImplementedError
+        #if self.nb_its > 0:
+        #    if self.opt in ['linf', 'l2']:
+        #        cat_var = self._run_one_pgd(pixel_model, pixel_inp, cat_var, target,
+        #                                    base_eps, step_size, avoid_target=avoid_target)
+        #    elif self.opt == 'l1':
+        #        cat_var = self._run_one_fw(pixel_model, pixel_inp, cat_var, target,
+        #                                   base_eps, avoid_target=avoid_target)
+        #    else:
+        #        raise NotImplementedError
         # self.jpeg scales rounding_vars by base_eps, so we divide to rescale
         # its coordinates to [-1, 1]
         cat_var_temp = cat_var / base_eps[:, None]
