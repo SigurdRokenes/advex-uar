@@ -42,7 +42,7 @@ class GaussianSmoothing(nn.Module):
 
         # Reshape to depthwise convolutional weight
         kernel = kernel.view(1, 1, *kernel.size())
-        kernel = kernel.repeat(channels, *[1] * (kernel.dim() - 1)).cuda()
+        kernel = kernel.repeat(channels, *[1] * (kernel.dim() - 1)).cpu()
 
         self.register_buffer('weight', kernel)
         self.groups = channels
@@ -124,7 +124,7 @@ def make_kernels(snow_length_bound=13, blur=True):
         if flip:
             k_npy = k_npy[:, ::-1]
 
-        kernel = torch.FloatTensor(k_npy.copy()).view(1,1,k_size,k_size).cuda()
+        kernel = torch.FloatTensor(k_npy.copy()).view(1,1,k_size,k_size).cpu()
 
         if blur:
             blurriness = np.random.uniform(0.41, 0.6)
@@ -140,7 +140,7 @@ def snow_creator(intensities, k, resol):
     k = torch.cat(k, 1)
 
     intensities_pow = torch.pow(intensities, 4)
-    flake_grids = torch.zeros((intensities.size(0), k.size(1), resol, resol)).cuda()
+    flake_grids = torch.zeros((intensities.size(0), k.size(1), resol, resol)).cpu()
 
     for i in range(4):
         flake_grids[:, i, ::4,i::4] = intensities_pow[:,i]

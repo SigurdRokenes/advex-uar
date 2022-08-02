@@ -35,12 +35,12 @@ class SnowAttack(AttackWrapper):
         self.scale_each = scale_each
         self.budget = budget
 
-        self.criterion = nn.CrossEntropyLoss().cuda()
+        self.criterion = nn.CrossEntropyLoss().cpu()
         self.nb_backward_steps = self.nb_its    
 
     def _init(self, batch_size):
         # flake intensities follow an exponential distribution
-        flake_intensities = torch.exp(-1./(self.budget)*torch.rand(batch_size,7,self.resol//4,self.resol//4)).cuda()
+        flake_intensities = torch.exp(-1./(self.budget)*torch.rand(batch_size,7,self.resol//4,self.resol//4)).cpu()
         flake_intensities.requires_grad_(True)
         
         return flake_intensities
@@ -51,14 +51,14 @@ class SnowAttack(AttackWrapper):
         
         if scale_eps:
             if self.scale_each:
-                rand = torch.rand(pixel_img.size()[0], device='cuda')
+                rand = torch.rand(pixel_img.size()[0], device='cpu')
             else:
-                rand = random.random() * torch.ones(pixel_img.size()[0], device='cuda')
+                rand = random.random() * torch.ones(pixel_img.size()[0], device='cpu')
             base_eps = rand.mul(self.eps_max)
-            step_size = self.step_size * torch.ones(pixel_img.size()[0], device='cuda')
+            step_size = self.step_size * torch.ones(pixel_img.size()[0], device='cpu')
         else:
-            base_eps = self.eps_max * torch.ones(pixel_img.size()[0], device='cuda')
-            step_size = self.step_size * torch.ones(pixel_img.size()[0], device='cuda')
+            base_eps = self.eps_max * torch.ones(pixel_img.size()[0], device='cpu')
+            step_size = self.step_size * torch.ones(pixel_img.size()[0], device='cpu')
         
         flake_intensities = self._init(batch_size)
         kernels = make_kernels()

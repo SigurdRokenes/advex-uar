@@ -106,3 +106,4 @@ venv.bak/
 # data
 images/
 output_images/
+testing/
